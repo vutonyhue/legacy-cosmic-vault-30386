@@ -36,7 +36,7 @@ export const CommentSection = ({ postId, onCommentAdded }: CommentSectionProps) 
 
   const fetchComments = async () => {
     const { data, error } = await supabase
-      .from('comments')
+      .from('post_comments')
       .select(`
         *,
         profiles (username, avatar_url)
@@ -66,7 +66,7 @@ export const CommentSection = ({ postId, onCommentAdded }: CommentSectionProps) 
     }
 
     const { error } = await supabase
-      .from('comments')
+      .from('post_comments')
       .insert({
         post_id: postId,
         user_id: user.id,
