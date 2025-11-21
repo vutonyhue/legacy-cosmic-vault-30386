@@ -39,7 +39,7 @@ export const HonorBoard = () => {
 
       // Fetch top users by comments count
       const { data: commentsData } = await supabase
-        .from('comments')
+        .from('post_comments')
         .select('user_id, profiles!inner(id, username, avatar_url)')
         .order('created_at', { ascending: false });
 

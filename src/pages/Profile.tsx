@@ -79,7 +79,7 @@ const Profile = () => {
           *,
           profiles (username, avatar_url),
           reactions (id, user_id),
-          comments (id)
+          post_comments (id)
         `)
         .eq('user_id', profileId)
         .order('created_at', { ascending: false });
