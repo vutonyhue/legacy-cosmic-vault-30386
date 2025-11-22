@@ -69,47 +69,69 @@ export const CreatePost = ({ onPostCreated }: CreatePostProps) => {
       let imageUrl = null;
       let videoUrl = null;
 
-      // Upload image if present
+      // Upload image directly to R2 using presigned URL
       if (image) {
         const fileExt = image.name.split('.').pop()?.toLowerCase();
-        const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+        const fileName = `posts/${user.id}/${crypto.randomUUID()}.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('posts')
-          .upload(fileName, image);
+        // Get presigned URL
+        const { data: presignedData, error: presignedError } = await supabase.functions.invoke(
+          'generate-r2-presigned-url',
+          {
+            body: { fileName, contentType: image.type }
+          }
+        );
 
-        if (uploadError) throw uploadError;
+        if (presignedError) throw presignedError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('posts')
-          .getPublicUrl(fileName);
+        // Upload directly to R2
+        const uploadResponse = await fetch(presignedData.presignedUrl, {
+          method: 'PUT',
+          body: image,
+          headers: {
+            'Content-Type': image.type,
+          },
+        });
+
+        if (!uploadResponse.ok) throw new Error('Failed to upload image');
         
-        imageUrl = publicUrl;
+        imageUrl = presignedData.publicUrl;
       }
 
-      // Upload video if present
+      // Upload video directly to R2 using presigned URL
       if (video) {
         const fileExt = video.name.split('.').pop()?.toLowerCase();
-        const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+        const fileName = `videos/${user.id}/${crypto.randomUUID()}.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('videos')
-          .upload(fileName, video);
+        // Get presigned URL
+        const { data: presignedData, error: presignedError } = await supabase.functions.invoke(
+          'generate-r2-presigned-url',
+          {
+            body: { fileName, contentType: video.type }
+          }
+        );
 
-        if (uploadError) throw uploadError;
+        if (presignedError) throw presignedError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('videos')
-          .getPublicUrl(fileName);
+        // Upload directly to R2
+        const uploadResponse = await fetch(presignedData.presignedUrl, {
+          method: 'PUT',
+          body: video,
+          headers: {
+            'Content-Type': video.type,
+          },
+        });
+
+        if (!uploadResponse.ok) throw new Error('Failed to upload video');
         
-        videoUrl = publicUrl;
+        videoUrl = presignedData.publicUrl;
       }
 
       const { error } = await supabase.from('posts').insert({
         user_id: user.id,
         content: content.trim() || '',
-        image_url: imageUrl,
-        video_url: videoUrl,
+        media_url: imageUrl || videoUrl,
+        media_type: imageUrl ? 'image' : videoUrl ? 'video' : null,
       });
 
       if (error) throw error;
@@ -122,6 +144,7 @@ export const CreatePost = ({ onPostCreated }: CreatePostProps) => {
       toast.success('Post created!');
       onPostCreated();
     } catch (error: any) {
+      console.error('Upload error:', error);
       toast.error(error.message || 'Failed to create post');
     } finally {
       setLoading(false);

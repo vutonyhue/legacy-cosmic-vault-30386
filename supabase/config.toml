@@ -1,1 +1,4 @@
 project_id = "vcigybekicepkusurkdr"
+
+[functions.generate-r2-presigned-url]
+verify_jwt = true
