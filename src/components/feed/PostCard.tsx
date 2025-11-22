@@ -80,18 +80,9 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
     toast.success('Link copied to clipboard!');
   };
 
+  // Repost feature temporarily disabled - database table not available
   const handleRepost = async () => {
-    try {
-      const { error } = await supabase.from('shared_posts').insert({
-        user_id: currentUserId,
-        original_post_id: post.id,
-      });
-
-      if (error) throw error;
-      toast.success('Post shared to your profile!');
-    } catch (error: any) {
-      toast.error('Failed to share post');
-    }
+    toast.info('Share feature coming soon!');
   };
 
   const handleProfileClick = () => {

@@ -46,22 +46,7 @@ export const SendTab = () => {
         {
           onSuccess: async (hash) => {
             toast.success('Giao dịch đã được gửi!');
-            
-            // Save transaction to database
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              await supabase.from('transactions').insert({
-                user_id: user.id,
-                tx_hash: hash,
-                from_address: address,
-                to_address: recipient,
-                amount: amount,
-                token_symbol: nativeToken,
-                chain_id: chainId,
-                status: 'pending'
-              });
-            }
-            
+            // Transaction logging temporarily disabled
             setRecipient('');
             setAmount('');
           },
