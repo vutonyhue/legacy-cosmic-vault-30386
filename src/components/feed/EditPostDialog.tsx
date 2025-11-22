@@ -10,8 +10,8 @@ interface EditPostDialogProps {
   post: {
     id: string;
     content: string;
-    image_url: string | null;
-    video_url?: string | null;
+    media_url: string | null;
+    media_type?: string | null;
   };
   isOpen: boolean;
   onClose: () => void;
@@ -22,8 +22,12 @@ export const EditPostDialog = ({ post, isOpen, onClose, onPostUpdated }: EditPos
   const [content, setContent] = useState(post.content);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(post.image_url);
-  const [videoPreview, setVideoPreview] = useState<string | null>(post.video_url);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    post.media_type === 'image' ? post.media_url : null
+  );
+  const [videoPreview, setVideoPreview] = useState<string | null>(
+    post.media_type === 'video' ? post.media_url : null
+  );
   const [loading, setLoading] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

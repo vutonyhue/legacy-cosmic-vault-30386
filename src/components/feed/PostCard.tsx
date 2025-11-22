@@ -15,8 +15,8 @@ interface PostCardProps {
   post: {
     id: string;
     content: string;
-    image_url: string | null;
-    video_url?: string | null;
+    media_url: string | null;
+    media_type?: string | null;
     created_at: string;
     user_id: string;
     profiles: {
@@ -112,27 +112,27 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
         <CardContent className="space-y-4 px-4 sm:px-6">
           {post.content && <p className="whitespace-pre-wrap text-sm sm:text-base break-words">{post.content}</p>}
           
-          {post.image_url && (
+          {post.media_url && post.media_type === 'image' && (
             <>
               <img
-                src={post.image_url}
+                src={post.media_url}
                 alt="Post"
                 className="w-full max-w-[1920px] max-h-[1920px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity object-contain mx-auto"
                 onClick={() => setShowImageViewer(true)}
               />
               <ImageViewer
-                imageUrl={post.image_url}
+                imageUrl={post.media_url}
                 isOpen={showImageViewer}
                 onClose={() => setShowImageViewer(false)}
               />
             </>
           )}
 
-          {post.video_url && (
+          {post.media_url && post.media_type === 'video' && (
             <video
               controls
               className="w-full max-w-[1920px] rounded-lg mx-auto"
-              src={post.video_url}
+              src={post.media_url}
             >
               Your browser does not support video playback.
             </video>
