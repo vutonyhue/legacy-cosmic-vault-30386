@@ -43,8 +43,8 @@ export const EditPostDialog = ({ post, isOpen, onClose, onPostUpdated }: EditPos
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error('Video size must be less than 50MB');
+      if (file.size > 4000 * 1024 * 1024) {
+        toast.error('Video size must be less than 4000MB (4GB)');
         return;
       }
       setVideoFile(file);
