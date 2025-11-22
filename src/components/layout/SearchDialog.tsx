@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 interface Profile {
   id: string;
   username: string;
-  full_name: string | null;
+  display_name: string | null;
   avatar_url: string | null;
 }
 
@@ -56,21 +56,11 @@ export const SearchDialog = () => {
       setLoading(true);
 
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        // Log search for rate limiting
-        if (user) {
-          await supabase.from('search_logs').insert({
-            user_id: user.id,
-            search_query: debouncedQuery
-          });
-        }
-
         // Search profiles
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('id, username, full_name, avatar_url')
-          .or(`username.ilike.%${debouncedQuery}%,full_name.ilike.%${debouncedQuery}%`)
+          .select('id, username, display_name, avatar_url')
+          .or(`username.ilike.%${debouncedQuery}%,display_name.ilike.%${debouncedQuery}%`)
           .limit(10);
 
         // Search posts
@@ -172,9 +162,9 @@ export const SearchDialog = () => {
                         </Avatar>
                         <div className="text-left">
                           <p className="font-semibold">{profile.username}</p>
-                          {profile.full_name && (
+                          {profile.display_name && (
                             <p className="text-sm text-muted-foreground">
-                              {profile.full_name}
+                              {profile.display_name}
                             </p>
                           )}
                         </div>

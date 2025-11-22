@@ -26,32 +26,9 @@ export const HistoryTab = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadTransactions = async () => {
-      if (!address) return;
-
-      setLoading(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-          if (!error && data) {
-            setTransactions(data);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading transactions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTransactions();
+    // Transaction history feature temporarily disabled - database table not available
+    setLoading(false);
+    setTransactions([]);
   }, [address]);
 
   const getExplorerUrl = (txHash: string, chainId: number) => {

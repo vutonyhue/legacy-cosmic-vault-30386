@@ -42,10 +42,10 @@ export const EditProfile = () => {
       if (error) throw error;
 
       setUsername(data.username || '');
-      setFullName(data.full_name || '');
+      setFullName(data.display_name || '');
       setBio(data.bio || '');
       setAvatarUrl(data.avatar_url || '');
-      setCoverUrl(data.cover_url || '');
+      // Cover image feature temporarily disabled
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -115,52 +115,8 @@ export const EditProfile = () => {
   };
 
   const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      if (!event.target.files || event.target.files.length === 0) {
-        return;
-      }
-
-      const file = event.target.files[0];
-
-      // Validate file size (max 5MB)
-      const MAX_SIZE = 5 * 1024 * 1024;
-      if (file.size > MAX_SIZE) {
-        toast.error('File quá lớn! Vui lòng chọn file dưới 5MB');
-        return;
-      }
-
-      setUploadingCover(true);
-
-      if (!userId) throw new Error('No user found');
-
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ cover_url: publicUrl })
-        .eq('id', userId);
-
-      if (updateError) throw updateError;
-
-      setCoverUrl(publicUrl);
-      toast.success('Ảnh bìa đã được cập nhật!');
-    } catch (error) {
-      console.error('Error uploading cover:', error);
-      toast.error('Lỗi khi tải ảnh bìa');
-    } finally {
-      setUploadingCover(false);
-    }
+    // Cover image feature temporarily disabled - database column not available
+    toast.info('Tính năng ảnh bìa sẽ được thêm sau!');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,7 +130,7 @@ export const EditProfile = () => {
         .from('profiles')
         .update({
           username,
-          full_name: fullName,
+          display_name: fullName,
           bio,
         })
         .eq('id', userId);
