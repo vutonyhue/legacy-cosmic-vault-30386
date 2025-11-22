@@ -119,6 +119,12 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
                 alt="Post"
                 className="w-full max-w-[1920px] max-h-[1920px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity object-contain mx-auto"
                 onClick={() => setShowImageViewer(true)}
+                onError={(e) => {
+                  console.error('Image load error:', post.media_url);
+                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif"%3EImage failed to load%3C/text%3E%3C/svg%3E';
+                }}
+                loading="lazy"
+                crossOrigin="anonymous"
               />
               <ImageViewer
                 imageUrl={post.media_url}
