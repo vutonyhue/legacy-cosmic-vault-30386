@@ -23,8 +23,8 @@ interface PostCardProps {
       username: string;
       avatar_url: string | null;
     };
-    reactions: { id: string; user_id: string }[];
-    comments: any[];
+    reactions?: { id: string; user_id: string }[];
+    comments?: any[];
   };
   currentUserId: string;
   onPostDeleted: () => void;
@@ -33,18 +33,18 @@ interface PostCardProps {
 export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) => {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(
-    post.reactions.some((r) => r.user_id === currentUserId)
+    post.reactions?.some((r) => r.user_id === currentUserId) || false
   );
-  const [likeCount, setLikeCount] = useState(post.reactions.length);
+  const [likeCount, setLikeCount] = useState(post.reactions?.length || 0);
   const [showImageViewer, setShowImageViewer] = useState(false);
-  const [commentCount, setCommentCount] = useState(post.comments.length);
+  const [commentCount, setCommentCount] = useState(post.comments?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   const handleLike = async () => {
     try {
       if (liked) {
-        const reaction = post.reactions.find((r) => r.user_id === currentUserId);
+        const reaction = post.reactions?.find((r) => r.user_id === currentUserId);
         if (reaction) {
           await supabase.from('reactions').delete().eq('id', reaction.id);
           setLiked(false);

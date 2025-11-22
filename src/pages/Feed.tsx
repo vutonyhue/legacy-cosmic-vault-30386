@@ -44,7 +44,7 @@ const Feed = () => {
           *,
           profiles (username, avatar_url),
           reactions (id, user_id),
-          post_comments (id)
+          comments:post_comments (id)
         `)
         .order('created_at', { ascending: false });
 
