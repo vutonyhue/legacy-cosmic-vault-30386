@@ -85,26 +85,37 @@ export const EditProfile = () => {
       if (!userId) throw new Error('No user found');
 
       const fileExt = 'jpg';
-      const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+      const fileName = `avatars/${userId}/${crypto.randomUUID()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, croppedImageBlob);
+      // Get presigned URL
+      const { data: presignedData, error: presignedError } = await supabase.functions.invoke(
+        'generate-r2-presigned-url',
+        {
+          body: { fileName, contentType: 'image/jpeg' }
+        }
+      );
 
-      if (uploadError) throw uploadError;
+      if (presignedError) throw presignedError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      // Upload directly to R2
+      const uploadResponse = await fetch(presignedData.presignedUrl, {
+        method: 'PUT',
+        body: croppedImageBlob,
+        headers: {
+          'Content-Type': 'image/jpeg',
+        },
+      });
+
+      if (!uploadResponse.ok) throw new Error('Failed to upload avatar');
 
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: presignedData.publicUrl })
         .eq('id', userId);
 
       if (updateError) throw updateError;
 
-      setAvatarUrl(publicUrl);
+      setAvatarUrl(presignedData.publicUrl);
       toast.success('Avatar updated successfully!');
     } catch (error) {
       console.error('Error uploading avatar:', error);

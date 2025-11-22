@@ -69,39 +69,70 @@ export const EditPostDialog = ({ post, isOpen, onClose, onPostUpdated }: EditPos
 
     setLoading(true);
     try {
-      let imageUrl = imagePreview;
-      let videoUrl = videoPreview;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      let mediaUrl = imagePreview || videoPreview;
+      let mediaType = imagePreview ? 'image' : videoPreview ? 'video' : null;
 
       // Upload new image if selected
       if (imageFile) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
-        
         const fileExt = imageFile.name.split('.').pop()?.toLowerCase();
-        const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
-        const { error: uploadError, data } = await supabase.storage
-          .from('posts')
-          .upload(fileName, imageFile);
+        const fileName = `posts/${user.id}/${crypto.randomUUID()}.${fileExt}`;
+        
+        // Get presigned URL
+        const { data: presignedData, error: presignedError } = await supabase.functions.invoke(
+          'generate-r2-presigned-url',
+          {
+            body: { fileName, contentType: imageFile.type }
+          }
+        );
 
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('posts').getPublicUrl(fileName);
-        imageUrl = publicUrl;
+        if (presignedError) throw presignedError;
+
+        // Upload directly to R2
+        const uploadResponse = await fetch(presignedData.presignedUrl, {
+          method: 'PUT',
+          body: imageFile,
+          headers: {
+            'Content-Type': imageFile.type,
+          },
+        });
+
+        if (!uploadResponse.ok) throw new Error('Failed to upload image');
+        
+        mediaUrl = presignedData.publicUrl;
+        mediaType = 'image';
       }
 
       // Upload new video if selected
       if (videoFile) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
-        
         const fileExt = videoFile.name.split('.').pop()?.toLowerCase();
-        const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('videos')
-          .upload(fileName, videoFile);
+        const fileName = `videos/${user.id}/${crypto.randomUUID()}.${fileExt}`;
+        
+        // Get presigned URL
+        const { data: presignedData, error: presignedError } = await supabase.functions.invoke(
+          'generate-r2-presigned-url',
+          {
+            body: { fileName, contentType: videoFile.type }
+          }
+        );
 
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('videos').getPublicUrl(fileName);
-        videoUrl = publicUrl;
+        if (presignedError) throw presignedError;
+
+        // Upload directly to R2
+        const uploadResponse = await fetch(presignedData.presignedUrl, {
+          method: 'PUT',
+          body: videoFile,
+          headers: {
+            'Content-Type': videoFile.type,
+          },
+        });
+
+        if (!uploadResponse.ok) throw new Error('Failed to upload video');
+        
+        mediaUrl = presignedData.publicUrl;
+        mediaType = 'video';
       }
 
       // Update post
@@ -109,8 +140,8 @@ export const EditPostDialog = ({ post, isOpen, onClose, onPostUpdated }: EditPos
         .from('posts')
         .update({
           content,
-          image_url: imageUrl,
-          video_url: videoUrl,
+          media_url: mediaUrl,
+          media_type: mediaType,
         })
         .eq('id', post.id);
 
@@ -120,6 +151,7 @@ export const EditPostDialog = ({ post, isOpen, onClose, onPostUpdated }: EditPos
       onPostUpdated();
       onClose();
     } catch (error: any) {
+      console.error('Update error:', error);
       toast.error('Failed to update post');
     } finally {
       setLoading(false);
