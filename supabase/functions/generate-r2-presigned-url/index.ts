@@ -67,7 +67,8 @@ Deno.serve(async (req) => {
     // R2 configuration
     const region = 'auto';
     const service = 's3';
-    const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+    const apiEndpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+    const publicEndpoint = `https://${bucketName}.r2.dev`;
     const expiresIn = 900; // 15 minutes
 
     // Generate timestamp
@@ -75,7 +76,7 @@ Deno.serve(async (req) => {
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
     const dateStamp = amzDate.slice(0, 8);
 
-    // Build canonical request components
+    // Build canonical request components (for PUT upload)
     const method = 'PUT';
     const canonicalUri = `/${bucketName}/${fileName}`;
     const canonicalQueryString = [
@@ -115,11 +116,11 @@ Deno.serve(async (req) => {
     const signingKey = await getSignatureKey(secretAccessKey, dateStamp, region, service);
     const signature = toHex(await hmac(signingKey, stringToSign));
 
-    // Build presigned URL
-    const presignedUrl = `${endpoint}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+    // Build presigned URL for direct upload (S3 API endpoint)
+    const presignedUrl = `${apiEndpoint}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
 
-    // Build public URL
-    const publicUrl = `${endpoint}${canonicalUri}`;
+    // Public URL for reading (R2 public domain)
+    const publicUrl = `${publicEndpoint}/${fileName}`;
 
     console.log('Generated presigned URL for:', fileName);
 
