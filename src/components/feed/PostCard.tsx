@@ -40,15 +40,16 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
   const [commentCount, setCommentCount] = useState(post.comments?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [signedMediaUrl, setSignedMediaUrl] = useState<string | null>(null);
 
+  // Lấy URL có chữ ký cho cả ảnh và video từ R2
   useEffect(() => {
-    const loadImageUrl = async () => {
-      if (!post.media_url || post.media_type !== 'image') return;
+    const loadMediaUrl = async () => {
+      if (!post.media_url || !post.media_type) return;
 
       try {
         const fileName = post.media_url.startsWith('http')
-          ? post.media_url.replace(/^https?:\/\/[^^/]+\//, '')
+          ? post.media_url.replace(/^https?:\/\/[^/]+\//, '')
           : post.media_url;
 
         const { data, error } = await supabase.functions.invoke<{ url: string }>(
@@ -59,18 +60,19 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
         );
 
         if (error || !data?.url) {
-          console.error('Failed to generate image URL', error);
+          console.error('Failed to generate media URL', error);
           return;
         }
 
-        setImageUrl(data.url);
+        setSignedMediaUrl(data.url);
       } catch (err) {
-        console.error('Error generating image URL', err);
+        console.error('Error generating media URL', err);
       }
     };
 
-    loadImageUrl();
+    loadMediaUrl();
   }, [post.media_url, post.media_type]);
+
   const handleLike = async () => {
     try {
       if (liked) {
@@ -128,8 +130,8 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
             <AvatarFallback>{post.profiles.username[0].toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 
-              className="font-semibold cursor-pointer hover:underline text-sm sm:text-base truncate" 
+            <h3
+              className="font-semibold cursor-pointer hover:underline text-sm sm:text-base truncate"
               onClick={handleProfileClick}
             >
               {post.profiles.username}
@@ -140,35 +142,38 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
           </div>
         </CardHeader>
         <CardContent className="space-y-4 px-4 sm:px-6">
-          {post.content && <p className="whitespace-pre-wrap text-sm sm:text-base break-words">{post.content}</p>}
-          
-          {post.media_url && post.media_type === 'image' && (
+          {post.content && (
+            <p className="whitespace-pre-wrap text-sm sm:text-base break-words">{post.content}</p>
+          )}
+
+          {post.media_url && post.media_type === 'image' && signedMediaUrl && (
             <>
               <img
-                src={post.media_url}
+                src={signedMediaUrl}
                 alt="Post"
                 className="w-full max-w-[1920px] max-h-[1920px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity object-contain mx-auto"
                 onClick={() => setShowImageViewer(true)}
                 onError={(e) => {
-                  console.error('Image load error:', post.media_url);
-                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif"%3EImage failed to load%3C/text%3E%3C/svg%3E';
+                  console.error('Image load error:', signedMediaUrl);
+                  e.currentTarget.src =
+                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif"%3EImage failed to load%3C/text%3E%3C/svg%3E';
                 }}
                 loading="lazy"
                 crossOrigin="anonymous"
               />
               <ImageViewer
-                imageUrl={post.media_url}
+                imageUrl={signedMediaUrl}
                 isOpen={showImageViewer}
                 onClose={() => setShowImageViewer(false)}
               />
             </>
           )}
 
-          {post.media_url && post.media_type === 'video' && (
+          {post.media_url && post.media_type === 'video' && signedMediaUrl && (
             <video
               controls
               className="w-full max-w-[1920px] rounded-lg mx-auto"
-              src={post.media_url}
+              src={signedMediaUrl}
             >
               Your browser does not support video playback.
             </video>
@@ -197,31 +202,54 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
               <span className="sm:hidden">{commentCount}</span>
             </Button>
             {post.user_id !== currentUserId && (
-              <Button variant="ghost" size="sm" onClick={handleRepost} className="text-xs sm:text-sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRepost}
+                className="text-xs sm:text-sm"
+              >
                 <Repeat2 className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Share</span>
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={handleShare} className="text-xs sm:text-sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              className="text-xs sm:text-sm"
+            >
               <Share2 className="w-4 h-4" />
             </Button>
             {post.user_id === currentUserId && (
               <>
-                <Button variant="ghost" size="sm" onClick={() => setShowEditDialog(true)} className="text-xs sm:text-sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEditDialog(true)}
+                  className="text-xs sm:text-sm"
+                >
                   <Pencil className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleDelete} className="text-xs sm:text-sm ml-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="text-xs sm:text-sm ml-auto"
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </>
             )}
           </div>
           {showComments && (
-            <CommentSection postId={post.id} onCommentAdded={() => setCommentCount(prev => prev + 1)} />
+            <CommentSection
+              postId={post.id}
+              onCommentAdded={() => setCommentCount((prev) => prev + 1)}
+            />
           )}
         </CardFooter>
       </Card>
-      
+
       <EditPostDialog
         post={post}
         isOpen={showEditDialog}
