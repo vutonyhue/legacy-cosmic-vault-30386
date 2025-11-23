@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -40,7 +40,37 @@ export const PostCard = ({ post, currentUserId, onPostDeleted }: PostCardProps) 
   const [commentCount, setCommentCount] = useState(post.comments?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    const loadImageUrl = async () => {
+      if (!post.media_url || post.media_type !== 'image') return;
+
+      try {
+        const fileName = post.media_url.startsWith('http')
+          ? post.media_url.replace(/^https?:\/\/[^^/]+\//, '')
+          : post.media_url;
+
+        const { data, error } = await supabase.functions.invoke<{ url: string }>(
+          'get-r2-object-url',
+          {
+            body: { fileName },
+          }
+        );
+
+        if (error || !data?.url) {
+          console.error('Failed to generate image URL', error);
+          return;
+        }
+
+        setImageUrl(data.url);
+      } catch (err) {
+        console.error('Error generating image URL', err);
+      }
+    };
+
+    loadImageUrl();
+  }, [post.media_url, post.media_type]);
   const handleLike = async () => {
     try {
       if (liked) {
