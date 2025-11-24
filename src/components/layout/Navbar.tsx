@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { Home, User, Wallet, LogOut, LogIn, Moon, Sun, Users, MessageSquare } from 'lucide-react';
+import { Home, User, Wallet, LogOut, LogIn, Moon, Sun, Users, MessageSquare, Gamepad2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { NotificationDropdown } from './NotificationDropdown';
 import { SearchDialog } from './SearchDialog';
@@ -72,6 +72,10 @@ export const Navbar = () => {
               <Wallet className="w-4 h-4 mr-2" />
               Wallet
             </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/puzzle')}>
+              <Gamepad2 className="w-4 h-4 mr-2" />
+              Puzzle
+            </Button>
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -90,6 +94,9 @@ export const Navbar = () => {
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/wallet')}>
               <Wallet className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/puzzle')}>
+              <Gamepad2 className="w-4 h-4" />
             </Button>
           </div>
           <SearchDialog />
